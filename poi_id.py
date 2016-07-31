@@ -72,10 +72,23 @@ print "total people after cleaning outliers: ", len(scratch)
 
 ### Task 3: Create new feature(s)
 new_feature = 0
+m = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 for i in scratch:
     new_feature = float((float(i[7])+float(i[9])+float(i[10]))/(float(i[6])+float(i[8])))
     i.append(new_feature)
+    if i[1] > m[0]: m[0] = float(i[1])
+    if i[2] > m[1]: m[1] = float(i[2])
+    if i[3] > m[2]: m[2] = float(i[3])
+    if ((i[4] > m[3]) and (i[4] <> 'NaN')): m[3] = float(i[4])
+    if ((i[5] > m[4]) and (i[5] <> 'NaN')): m[4] = float(i[5])
+    if i[6] > m[5]: m[5] = float(i[6])
+    if i[7] > m[6]: m[6] = float(i[7])
+    if i[8] > m[7]: m[7] = float(i[8])
+    if i[9] > m[8]: m[8] = float(i[9])
+    if i[10] > m[9]: m[9] = float(i[10])
+    if i[11] > m[10]: m[10] = float(i[11])    
 print scratch
+print m
 ##print len(scratch)
 
 features_list.append('poi_email_ratio')
@@ -83,7 +96,7 @@ features_list.append('poi_email_ratio')
 cleaned_names = []
 for i in scratch:
     cleaned_names.append(i[0])
-print cleaned_names
+##print cleaned_names
 
 ### Store to my_dataset for easy export below.
 my_dataset = {}
@@ -91,20 +104,26 @@ for i in data_dict:
     if i in cleaned_names:
         my_dataset[i] = {}
         my_dataset[i]['poi'] = data_dict[i]['poi']
-        my_dataset[i]['salary'] = data_dict[i]['salary']
-        my_dataset[i]['total_payments'] = data_dict[i]['total_payments']
-        my_dataset[i]['bonus'] = data_dict[i]['bonus']
-        my_dataset[i]['total_stock_value'] = data_dict[i]['total_stock_value']
-        my_dataset[i]['to_messages'] = data_dict[i]['to_messages']
-        my_dataset[i]['from_poi_to_this_person'] = data_dict[i]['from_poi_to_this_person']
-        my_dataset[i]['from_messages'] = data_dict[i]['from_messages']
-        my_dataset[i]['from_this_person_to_poi'] = data_dict[i]['from_this_person_to_poi']
-        my_dataset[i]['shared_receipt_with_poi'] = data_dict[i]['shared_receipt_with_poi']
+        my_dataset[i]['salary'] = data_dict[i]['salary']/m[1]
+        my_dataset[i]['total_payments'] = data_dict[i]['total_payments']/m[2]
+        if data_dict[i]['bonus'] == 'NaN':
+            my_dataset[i]['bonus'] = 0
+        else:
+            my_dataset[i]['bonus'] = data_dict[i]['bonus']/m[3]
+        if data_dict[i]['total_stock_value'] == 'NaN':
+            my_dataset[i]['total_stock_value'] = 0
+        else:
+            my_dataset[i]['total_stock_value'] = data_dict[i]['total_stock_value']/m[4]
+        my_dataset[i]['to_messages'] = data_dict[i]['to_messages']/m[5]
+        my_dataset[i]['from_poi_to_this_person'] = data_dict[i]['from_poi_to_this_person']/m[6]
+        my_dataset[i]['from_messages'] = data_dict[i]['from_messages']/m[7]
+        my_dataset[i]['from_this_person_to_poi'] = data_dict[i]['from_this_person_to_poi']/m[8]
+        my_dataset[i]['shared_receipt_with_poi'] = data_dict[i]['shared_receipt_with_poi']/m[9]
         my_dataset[i]['poi_email_ratio'] = \
-        float((float(data_dict[i]['from_poi_to_this_person'])\
+        float(((float(data_dict[i]['from_poi_to_this_person'])\
                +float(data_dict[i]['from_this_person_to_poi'])\
                +float(data_dict[i]['shared_receipt_with_poi']))/\
-              (float(data_dict[i]['to_messages'])+float(data_dict[i]['from_messages'])))
+              (float(data_dict[i]['to_messages'])+float(data_dict[i]['from_messages']))))/m[10]
 
 print my_dataset
 print len(my_dataset)
