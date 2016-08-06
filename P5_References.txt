@@ -1,0 +1,9 @@
+I hereby confirm that this submission is my work. I have cited above the origins of any parts of the submission that were taken from Websites, books, forums, blog posts, github repositories, etc.
+
+Resources:
+https://classroom.udacity.com
+http://scikit-learn.org
+https://en.wikipedia.org
+http://stackoverflow.com/
+https://docs.python.org/
+
