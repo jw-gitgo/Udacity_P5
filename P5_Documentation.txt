@@ -2,31 +2,46 @@
 
 The goal of this project is to determine whether one can use machine learning to reliably identify persons-of-interest (POI's) in the Enron dataset, using available features of that same dataset.  Machine learning is useful in this case because it can objectively and consistently evaluate the significance of a fairly large number of features over a large dataset, which would be very difficult and time-consuming to do manually.  It also offers many built-in tools (like PCA) and evaluation metrics that make it quick and easy to evaluate and modify the algorithms on-the-fly in order to optimize performance.
 
-Below are some summary statistics of the people contained within the dataset; as you can see, I chose to remove all people who lacked either salary data or email data, since it would be problematic to compare people who did not share the same feature data, leaving only 67 of the 146 people.  I then also removed anyone with total_payments over $10,000,000, or with to_messages or from_messages over 10,000 (potentially caused by some automated email rules?), since these were drastic outliers from the rest of the dataset.  This left only 61 samples available for both training and testing, which is a very limited sample size.
+Below are some summary statistics of the people contained within the dataset; there were two clear outliers that did not represent people, so those were removed ("THE TRAVEL AGENCY IN THE PARK" and "TOTAL").  I chose to leave in all other data points due to the already very sparse nature of the dataset.  Many people were missing salary or email data, but I chose to move ahead anyway, under the assumption that there would still be enough data for machine learning to extract useful trends.
 
 total people:  146
 people with salary + email data:  67
 people with only salary data:  28
 people with only email data:  19
 people with neither:  32
-total people after cleaning outliers:  61
+total people after cleaning outliers:  144
 
 
 2. What features did you end up using in your POI identifier, and what selection process did you use to pick them? Did you have to do any scaling? Why or why not? As part of the assignment, you should attempt to engineer your own feature that does not come ready-made in the dataset -- explain what feature you tried to make, and the rationale behind it. (You do not necessarily have to use it in the final analysis, only engineer and test it.) In your feature selection step, if you used an algorithm like a decision tree, please also give the feature importances of the features that you use, and if you used an automated feature selection function like SelectKBest, please report the feature scores and reasons for your choice of parameter values.  [relevant rubric items: “create new features”, “properly scale features”, “intelligently select feature”]
 
-My feature list was as follows:  'poi', 'salary', 'total_payments', 'bonus', 'total_stock_value', 'to_messages', 'from_poi_to_this_person', 'from_messages', 'from_this_person_to_poi', 'shared_receipt_with_poi', 'poi_email_ratio'.  I picked these after reviewing the features in the dataset to figure out how they related to one another, and after identifying which ones most consistently had valid data.  This was also somewhat based on intuition and an understanding of human behavior, how businesses incentivize their employees, and how employees typically communicate via email.  I debated whether feature scaling was really necessary in this case; I did not combine different units in any way that would have been problematic, and I assume that the sklearn functions are robust enough to not be dependent on everything being scaled by the user in advance.  I didn't scale anything the first time through, but then I scaled all features the second time through, and saw no difference.  I created the new feature 'poi_email_ratio', which was equal to ('from_poi_to_this_person' + 'from_this_person_to_poi' + 'shared_receipt_with_poi') / ('to_messages" + 'from_messages').  This essentially tells us what percentage of the person's email activity involved POI's - note that it can be greater than 1, since the 'shared_receipt_with_poi' could overlap with the other 2 poi email features.  I did not use a decision tree or an automated feature selection function, so the last part of the question does not apply.
-
+My feature list was as follows:  ['poi', 'salary', 'to_messages', 'deferral_payments', \
+                 'total_payments', 'exercised_stock_options', 'bonus', \
+                 'restricted_stock', 'shared_receipt_with_poi', \
+                 'restricted_stock_deferred', 'total_stock_value', \
+                 'expenses', 'loan_advances', 'from_messages', 'other', \
+                 'from_this_person_to_poi', 'director_fees', \
+                 'deferred_income', 'long_term_incentive', \
+                 'from_poi_to_this_person', 'scaled_salary_bonus_stock'].
+This is the full list of features - in my initial submission, I tried to reduce the number of features using my intuition, and then by using SelectKBest, but I found that reducing the number of features reduced my accuracy, F1, recall, and precision scores.  Therefore I went back to using the entire dataset.  This is not optimal from a performance standpoint, but was necessary to achieve precision and recall of 0.3.  I created the "scaled_salary_bonus_stock" feature by combining the scaled versions of those 3 features - I chose those 3 features because they had 3 of the top scores from SelectKBest.  Otherwise, I did not scale any other features, but had to for "scaled_salary_bonus_stock" because I was combining features of very different magnitudes and ranges.  FYI, these are the top scoring features when I used SelectKBest with the 'f_classif' methodology:
+-salary   18.29
+-excercised_stock_options  24.82
+-bonus  20.79
+-total stock value  24.18
+-deferred_income  11.46
+-scaled_salary_bonus_stock  9.92
 
 3. What algorithm did you end up using? What other one(s) did you try? How did model performance differ between algorithms?  [relevant rubric item: “pick an algorithm”]
 
-I used a pipeline combination of PCA and SVM, following the example from the Eigenfaces mini project.  I also tried SVM by itself, as well as Gaussian Naive Bayes.  There was no difference between PCA/SVM and SVM, but Gaussian Naive Bayes produced somewhat lower F1, Precision, and Recall scores.
+I ultimately arrived at Adaboost, tuned with GridSearchCV.  RandomForest did not produce the precision and recall scores required, despite exhaustively tuning its parameters with GridSearchCV.  I also tried SVC and GaussianNB, but they produced much lower scores.
 
 
 4. What does it mean to tune the parameters of an algorithm, and what can happen if you don’t do this well?  How did you tune the parameters of your particular algorithm? (Some algorithms do not have parameters that you need to tune -- if this is the case for the one you picked, identify and briefly explain how you would have done it for the model that was not your final choice or a different model that does utilize parameter tuning, e.g. a decision tree classifier).  [relevant rubric item: “tune the algorithm”]
 
-Many algorithms require input parameters that serve as underlying assumptions during execution.  For instance the number of principle components you want the PCA algorithm to produce, or the penalty factor you would like the SVC algorithm to use.  These cannot be automatically detected or predicted by the algorithm, since they really reflect the desires and purpose of the human user.  Using them incorrectly will still allow the algorithms to run, but may produce suboptimal results with regards to speed, accuracy, precision, recall, efficiency, etc.
+Many algorithms require input parameters that serve as underlying assumptions during execution.  For instance, the number of principle components you want the PCA algorithm to produce, or the penalty factor you would like the SVC algorithm to use.  These cannot be automatically detected or predicted by the algorithm, since they really reflect the desires and purpose of the human user.  Using them incorrectly will still allow the algorithms to run, but may produce suboptimal results with regards to speed, accuracy, precision, recall, efficiency, etc.
 
-I tuned my parameters automatically by using the GridSearchCV function, for both the PCA and SVC algorithms.  I had it select the best options for the PCA number of components and the SVC "C" penalty constant from the ranges [2, 5, 10] and [0.1, 1, 10, 100], respectively.
+I tuned my parameters automatically by using the GridSearchCV function.  This produced the following:
+AdaBoostClassifier(algorithm='SAMME.R', base_estimator=None,
+          learning_rate=0.5, n_estimators=100, random_state=None)
 
 
 5. What is validation, and what’s a classic mistake you can make if you do it wrong? How did you validate your analysis?  [relevant rubric item: “validation strategy”]
@@ -36,15 +51,14 @@ Validating is the process of confirming that the algorithms are producing the de
 
 6. Give at least 2 evaluation metrics and your average performance for each of them.  Explain an interpretation of your metrics that says something human-understandable about your algorithm’s performance. [relevant rubric item: “usage of evaluation metrics”]
 
-Below is my final classification report:
-
+I used precision and recall, and here is a sample classification report:
              precision    recall  f1-score   support
 
-        0.0       0.77      1.00      0.87        33
-        1.0       0.00      0.00      0.00        10
+        0.0       0.92      0.95      0.94        38
+        1.0       0.50      0.40      0.44         5
 
-avg / total       0.59      0.77      0.67        43
+avg / total       0.87      0.88      0.88        43
 
-This indicates that for 43 test people, the algorithm identifies them all as non-POI's.  While this might at first seem like a failure, it makes sense that it produces the best evaluation scores because most of the people ARE non-POI's.  It is also a desirable result in that the algorithm seems very unlikely to falsely accuse an innocent person of being involved in the Enron fraud.  However, I would still be very hesitant to use this algorithm for anything consequential since it is based on such a small dataset - if more data were available, we could tune it more effectively and hopefully be able to predict some true positives.  If we wanted to produce some positive predictions with the current (small) dataset, we would have to reduce the "C" penalty parameter for false results, and accept that we'll likely get some false positives.
+In common terms, precision indicates how often the algorithm is correct when it "accuses" someone of being a POI.  Recall indicates how many true POI's the algorithm "accuses."  From the above example table, the algorithm is correct 50% of the time when it indicates a POI, and it catches 40% of the POI's.  There is usually a trade-off between these 2 metrics:  as you increase the algorithm's bias for making accusations, it will catch more POI's, but will be incorrect in more accusations.  It is sometimes possible to improve both scores simultaneously, but this would require a better algorithm, better parameter tuning, more data, more features, etc.
 
 
